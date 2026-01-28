@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/transactions")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "${allowed.origins}", allowCredentials = "true", methods = {RequestMethod.GET, RequestMethod.POST})
 public class TransactionController {
 
     private final TransactionService transactionService;
@@ -26,10 +26,7 @@ public class TransactionController {
     }
 
     @PostMapping("/deposit")
-    public ResponseEntity<TransactionResponse> deposit(@RequestBody TransactionRequest request, @RequestHeader("X-CSRF-TOKEN") String csrfToken) {
-        if (!isValidCsrfToken(csrfToken)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
+    public ResponseEntity<TransactionResponse> deposit(@RequestBody TransactionRequest request) {
         Transaction transaction = transactionService.deposit(
             request.getAccountId(),
             new Money(request.getAmount(), request.getCurrency()),
@@ -39,10 +36,7 @@ public class TransactionController {
     }
 
     @PostMapping("/withdraw")
-    public ResponseEntity<TransactionResponse> withdraw(@RequestBody TransactionRequest request, @RequestHeader("X-CSRF-TOKEN") String csrfToken) {
-        if (!isValidCsrfToken(csrfToken)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
+    public ResponseEntity<TransactionResponse> withdraw(@RequestBody TransactionRequest request) {
         Transaction transaction = transactionService.withdraw(
             request.getAccountId(),
             new Money(request.getAmount(), request.getCurrency()),
@@ -52,10 +46,7 @@ public class TransactionController {
     }
 
     @PostMapping("/transfer")
-    public ResponseEntity<TransactionResponse> transfer(@RequestBody TransactionRequest request, @RequestHeader("X-CSRF-TOKEN") String csrfToken) {
-        if (!isValidCsrfToken(csrfToken)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
+    public ResponseEntity<TransactionResponse> transfer(@RequestBody TransactionRequest request) {
         Transaction transaction = transactionService.transfer(
             request.getFromAccountId(),
             request.getToAccountId(),
@@ -91,11 +82,5 @@ public class TransactionController {
         response.setDescription(transaction.getDescription());
         response.setRelatedAccountId(transaction.getRelatedAccountId());
         return response;
-    }
-
-    private boolean isValidCsrfToken(String csrfToken) {
-        // Implement CSRF token validation logic here
-        // This is a placeholder and should be replaced with actual validation
-        return csrfToken != null && !csrfToken.isEmpty();
     }
 }
