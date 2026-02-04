@@ -84,3 +84,46 @@ public class TransactionController {
         return response;
     }
 }
+
+
+package com.banking.api.config;
+
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.context.annotation.Bean;
+import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
+
+@Configuration
+@EnableWebSecurity
+public class WebConfig implements WebMvcConfigurer {
+
+    @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        registry.addResourceHandler("/**")
+                .addResourceLocations("classpath:/static/");
+    }
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, HandlerMappingIntrospector introspector) throws Exception {
+        MvcRequestMatcher.Builder mvcMatcherBuilder = new MvcRequestMatcher.Builder(introspector);
+
+        http
+            .csrf((csrf) -> csrf
+                .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
+            )
+            .authorizeHttpRequests((authz) -> authz
+                .requestMatchers(mvcMatcherBuilder.pattern("/api/**")).authenticated()
+                .anyRequest().permitAll()
+            )
+            .exceptionHandling((exceptionHandling) -> exceptionHandling
+                .accessDeniedHandler((request, response, accessDeniedException) -> {
+                    response.setStatus(403);
+                    response.getWriter().write("Access Denied: " + accessDeniedException.getMessage());
+                })
+            );
+
+        return http.build();
+    }
+}
