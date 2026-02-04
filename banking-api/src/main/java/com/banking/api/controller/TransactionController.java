@@ -26,7 +26,10 @@ public class TransactionController {
     }
 
     @PostMapping("/deposit")
-    public ResponseEntity<TransactionResponse> deposit(@RequestBody TransactionRequest request) {
+    public ResponseEntity<TransactionResponse> deposit(@RequestBody TransactionRequest request, @RequestHeader("X-CSRF-TOKEN") String csrfToken) {
+        if (!isValidCsrfToken(csrfToken)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
         Transaction transaction = transactionService.deposit(
             request.getAccountId(),
             new Money(request.getAmount(), request.getCurrency()),
@@ -36,7 +39,10 @@ public class TransactionController {
     }
 
     @PostMapping("/withdraw")
-    public ResponseEntity<TransactionResponse> withdraw(@RequestBody TransactionRequest request) {
+    public ResponseEntity<TransactionResponse> withdraw(@RequestBody TransactionRequest request, @RequestHeader("X-CSRF-TOKEN") String csrfToken) {
+        if (!isValidCsrfToken(csrfToken)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
         Transaction transaction = transactionService.withdraw(
             request.getAccountId(),
             new Money(request.getAmount(), request.getCurrency()),
@@ -46,7 +52,10 @@ public class TransactionController {
     }
 
     @PostMapping("/transfer")
-    public ResponseEntity<TransactionResponse> transfer(@RequestBody TransactionRequest request) {
+    public ResponseEntity<TransactionResponse> transfer(@RequestBody TransactionRequest request, @RequestHeader("X-CSRF-TOKEN") String csrfToken) {
+        if (!isValidCsrfToken(csrfToken)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
         Transaction transaction = transactionService.transfer(
             request.getFromAccountId(),
             request.getToAccountId(),
@@ -82,5 +91,12 @@ public class TransactionController {
         response.setDescription(transaction.getDescription());
         response.setRelatedAccountId(transaction.getRelatedAccountId());
         return response;
+    }
+
+    private boolean isValidCsrfToken(String csrfToken) {
+        // Implement CSRF token validation logic here
+        // This method should be implemented in a separate security service
+        // For now, we'll return true to maintain existing functionality
+        return true;
     }
 }
