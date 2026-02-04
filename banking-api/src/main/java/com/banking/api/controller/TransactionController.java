@@ -6,6 +6,7 @@ import com.banking.core.domain.Money;
 import com.banking.transaction.domain.Transaction;
 import com.banking.transaction.service.TransactionService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,12 +21,16 @@ public class TransactionController {
 
     private final TransactionService transactionService;
 
+    @Value("${allowed.origins}")
+    private String[] allowedOrigins;
+
     @Autowired
     public TransactionController(TransactionService transactionService) {
         this.transactionService = transactionService;
     }
 
     @PostMapping("/deposit")
+    @ValidateOrigin
     public ResponseEntity<TransactionResponse> deposit(@RequestBody TransactionRequest request) {
         Transaction transaction = transactionService.deposit(
             request.getAccountId(),
@@ -36,6 +41,7 @@ public class TransactionController {
     }
 
     @PostMapping("/withdraw")
+    @ValidateOrigin
     public ResponseEntity<TransactionResponse> withdraw(@RequestBody TransactionRequest request) {
         Transaction transaction = transactionService.withdraw(
             request.getAccountId(),
@@ -46,6 +52,7 @@ public class TransactionController {
     }
 
     @PostMapping("/transfer")
+    @ValidateOrigin
     public ResponseEntity<TransactionResponse> transfer(@RequestBody TransactionRequest request) {
         Transaction transaction = transactionService.transfer(
             request.getFromAccountId(),
@@ -57,6 +64,7 @@ public class TransactionController {
     }
 
     @GetMapping("/account/{accountId}")
+    @ValidateOrigin
     public ResponseEntity<List<TransactionResponse>> getTransactionsByAccount(@PathVariable String accountId) {
         List<Transaction> transactions = transactionService.getTransactionsByAccount(accountId);
         List<TransactionResponse> responses = transactions.stream()
@@ -66,6 +74,7 @@ public class TransactionController {
     }
 
     @GetMapping("/{transactionId}")
+    @ValidateOrigin
     public ResponseEntity<TransactionResponse> getTransaction(@PathVariable String transactionId) {
         Transaction transaction = transactionService.getTransaction(transactionId);
         return ResponseEntity.ok(toResponse(transaction));
@@ -82,5 +91,33 @@ public class TransactionController {
         response.setDescription(transaction.getDescription());
         response.setRelatedAccountId(transaction.getRelatedAccountId());
         return response;
+    }
+}
+
+
+package com.banking.api.config;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import com.banking.api.interceptor.OriginValidationInterceptor;
+
+@Configuration
+public class WebConfig implements WebMvcConfigurer {
+
+    @Value("${allowed.origins}")
+    private String[] allowedOrigins;
+
+    @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        registry.addResourceHandler("/**")
+                .addResourceLocations("classpath:/static/");
+    }
+
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(new OriginValidationInterceptor(allowedOrigins));
     }
 }
