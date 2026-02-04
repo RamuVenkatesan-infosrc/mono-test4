@@ -1,5 +1,5 @@
 // Use relative path when served from same origin, or absolute for standalone
-const API_BASE_URL = window.location.origin + '/api';
+const API_BASE_URL = '/api';
 
 // Global state
 let allAccounts = [];
@@ -206,23 +206,40 @@ async function loadDashboard() {
                 </div>
             `;
         } else {
-            dashboardAccounts.innerHTML = accounts.slice(0, 4).map(account => `
-                <div class="account-card">
-                    <div class="account-header">
-                        <span class="account-type">${account.accountType}</span>
-                        <span class="account-status ${account.active ? 'active' : 'inactive'}">
-                            ${account.active ? 'Active' : 'Inactive'}
-                        </span>
-                    </div>
-                    <div class="account-balance">
-                        <div class="account-balance-label">Available Balance</div>
-                        <div class="account-balance-amount">${formatCurrency(account.balance, account.currency)}</div>
-                    </div>
-                    <div class="account-id">
-                        <strong>Account:</strong> ${formatAccountId(account.accountId)}
-                    </div>
-                </div>
-            `).join('');
+            dashboardAccounts.innerHTML = accounts.slice(0, 4).map(account => {
+                const accountTypeElement = document.createElement('span');
+                accountTypeElement.className = 'account-type';
+                accountTypeElement.textContent = account.accountType;
+
+                const accountStatusElement = document.createElement('span');
+                accountStatusElement.className = `account-status ${account.active ? 'active' : 'inactive'}`;
+                accountStatusElement.textContent = account.active ? 'Active' : 'Inactive';
+
+                const accountBalanceLabelElement = document.createElement('div');
+                accountBalanceLabelElement.className = 'account-balance-label';
+                accountBalanceLabelElement.textContent = 'Available Balance';
+
+                const accountBalanceAmountElement = document.createElement('div');
+                accountBalanceAmountElement.className = 'account-balance-amount';
+                accountBalanceAmountElement.textContent = formatCurrency(account.balance, account.currency);
+
+                const accountIdElement = document.createElement('div');
+                accountIdElement.className = 'account-id';
+                const strongElement = document.createElement('strong');
+                strongElement.textContent = 'Account:';
+                accountIdElement.appendChild(strongElement);
+                accountIdElement.appendChild(document.createTextNode(` ${formatAccountId(account.accountId)}`));
+
+                const accountCard = document.createElement('div');
+                accountCard.className = 'account-card';
+                accountCard.appendChild(accountTypeElement);
+                accountCard.appendChild(accountStatusElement);
+                accountCard.appendChild(accountBalanceLabelElement);
+                accountCard.appendChild(accountBalanceAmountElement);
+                accountCard.appendChild(accountIdElement);
+
+                return accountCard.outerHTML;
+            }).join('');
         }
         
         // Load recent activity (placeholder for now)
@@ -304,23 +321,53 @@ document.getElementById('customerAccountsForm').addEventListener('submit', async
             `;
             return;
         }
-        customerAccountsList.innerHTML = accounts.map(account => `
-            <div class="account-card">
-                <div class="account-header">
-                    <span class="account-type">${account.accountType}</span>
-                    <span class="account-status ${account.active ? 'active' : 'inactive'}">
-                        ${account.active ? 'Active' : 'Inactive'}
-                    </span>
-                </div>
-                <div class="account-balance">
-                    <div class="account-balance-label">Available Balance</div>
-                    <div class="account-balance-amount">${formatCurrency(account.balance, account.currency)}</div>
-                </div>
-                <div class="account-id">
-                    <strong>Account:</strong> ${formatAccountId(account.accountId)}
-                </div>
-            </div>
-        `).join('');
+        customerAccountsList.innerHTML = accounts.map(account => {
+            const accountCard = document.createElement('div');
+            accountCard.className = 'account-card';
+
+            const accountHeader = document.createElement('div');
+            accountHeader.className = 'account-header';
+
+            const accountType = document.createElement('span');
+            accountType.className = 'account-type';
+            accountType.textContent = account.accountType;
+
+            const accountStatus = document.createElement('span');
+            accountStatus.className = `account-status ${account.active ? 'active' : 'inactive'}`;
+            accountStatus.textContent = account.active ? 'Active' : 'Inactive';
+
+            accountHeader.appendChild(accountType);
+            accountHeader.appendChild(accountStatus);
+
+            const accountBalance = document.createElement('div');
+            accountBalance.className = 'account-balance';
+
+            const balanceLabel = document.createElement('div');
+            balanceLabel.className = 'account-balance-label';
+            balanceLabel.textContent = 'Available Balance';
+
+            const balanceAmount = document.createElement('div');
+            balanceAmount.className = 'account-balance-amount';
+            balanceAmount.textContent = formatCurrency(account.balance, account.currency);
+
+            accountBalance.appendChild(balanceLabel);
+            accountBalance.appendChild(balanceAmount);
+
+            const accountId = document.createElement('div');
+            accountId.className = 'account-id';
+
+            const accountIdLabel = document.createElement('strong');
+            accountIdLabel.textContent = 'Account:';
+
+            accountId.appendChild(accountIdLabel);
+            accountId.appendChild(document.createTextNode(` ${formatAccountId(account.accountId)}`));
+
+            accountCard.appendChild(accountHeader);
+            accountCard.appendChild(accountBalance);
+            accountCard.appendChild(accountId);
+
+            return accountCard.outerHTML;
+        }).join('');
     } catch (error) {
         // Error already shown by apiCall
     }
@@ -391,287 +438,101 @@ document.getElementById('transferForm').addEventListener('submit', async (e) => 
     
     showConfirmModal(
         'Confirm Transfer',
-        `Transfer ${formatCurrency(amount)} from ${formatAccountId(fromAccountId)} to ${formatAccountId(toAccountId)}?`,
-        async () => {
-            try {
-                showLoading();
-                const fromAccount = allAccounts.find(acc => acc.accountId === fromAccountId);
-                const currency = fromAccount ? fromAccount.currency : 'USD';
-                
-                const transaction = await apiCall('/transactions/transfer', 'POST', {
-                    fromAccountId: fromAccountId,
-                    toAccountId: toAccountId,
-                    amount: amount,
-                    currency: currency,
-                    description: description
-                });
-                
-                showToast(`Transfer successful! Amount: ${formatCurrency(transaction.amount, transaction.currency)}`, 'success');
-                document.getElementById('transferForm').reset();
-                document.getElementById('transferSummary').style.display = 'none';
-                await loadAccounts();
-                await loadDashboard();
-            } catch (error) {
-                // Error already shown by apiCall
-            } finally {
-                hideLoading();
+        `Transfer ${formatCurrency(amount)} from ${formatAccountId(fromAccountId)} to ${formatAccountId(toAccount
+
+
+package com.banking.api.config;
+
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.context.annotation.Bean;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+
+@Configuration
+public class WebConfig implements WebMvcConfigurer {
+
+    @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        registry.addResourceHandler("/**")
+                .addResourceLocations("classpath:/static/");
+    }
+
+    @Bean
+    public WebMvcConfigurer corsConfigurer() {
+        return new WebMvcConfigurer() {
+            @Override
+            public void addCorsMappings(CorsRegistry registry) {
+                registry.addMapping("/**")
+                        .allowedOrigins("*")
+                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                        .allowedHeaders("*")
+                        .exposedHeaders("Authorization")
+                        .allowCredentials(true)
+                        .maxAge(3600);
             }
-        }
-    );
-});
-
-document.getElementById('transactionHistoryForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    try {
-        const accountId = document.getElementById('historyAccountId').value;
-        const transactions = await apiCall(`/transactions/account/${accountId}`);
-        const transactionHistory = document.getElementById('transactionHistory');
-        if (transactions.length === 0) {
-            transactionHistory.innerHTML = `
-                <div class="empty-state">
-                    <i class="fas fa-history"></i>
-                    <p>No transactions found for this account.</p>
-                </div>
-            `;
-            return;
-        }
-        transactionHistory.innerHTML = transactions.map(t => {
-            const isPositive = t.type === 'DEPOSIT' || t.type === 'TRANSFER';
-            const typeClass = t.type.toLowerCase();
-            return `
-                <div class="transaction-item">
-                    <div class="transaction-info">
-                        <div class="transaction-type ${typeClass}">
-                            <i class="fas ${t.type === 'DEPOSIT' ? 'fa-arrow-down' : t.type === 'WITHDRAWAL' ? 'fa-arrow-up' : 'fa-exchange-alt'}"></i>
-                            ${t.type}
-                        </div>
-                        <div class="transaction-details">${t.description}</div>
-                        <div class="transaction-date">${new Date(t.timestamp).toLocaleString()}</div>
-                        ${t.relatedAccountId ? `<div class="transaction-details" style="margin-top: 0.25rem;">
-                            <i class="fas fa-link"></i> To: ${formatAccountId(t.relatedAccountId)}
-                        </div>` : ''}
-                    </div>
-                    <div class="transaction-amount ${isPositive ? 'positive' : 'negative'}">
-                        ${isPositive ? '+' : '-'}${formatCurrency(t.amount, t.currency)}
-                    </div>
-                </div>
-            `;
-        }).join('');
-    } catch (error) {
-        // Error already shown by apiCall
+        };
     }
-});
 
-// Update account dropdowns when account selection changes
-['depositAccountId', 'withdrawAccountId', 'fromAccountId', 'toAccountId'].forEach(id => {
-    const select = document.getElementById(id);
-    if (select) {
-        select.addEventListener('change', function() {
-            const accountId = this.value;
-            const account = allAccounts.find(acc => acc.accountId === accountId);
-            if (account) {
-                // Update currency if needed (for forms that have currency field)
-                const currencyField = this.closest('form').querySelector('input[type="text"][id*="Currency"]');
-                if (currencyField) {
-                    currencyField.value = account.currency;
-                }
+    @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        registry.addResourceHandler("/**")
+                .addResourceLocations("classpath:/static/")
+                .setCacheControl(CacheControl.noCache().mustRevalidate());
+    }
+
+    @Bean
+    public WebMvcConfigurer contentSecurityPolicyConfigurer() {
+        return new WebMvcConfigurer() {
+            @Override
+            public void addResourceHandlers(ResourceHandlerRegistry registry) {
+                registry.addResourceHandler("/**")
+                        .addResourceLocations("classpath:/static/")
+                        .setCacheControl(CacheControl.noCache().mustRevalidate())
+                        .resourceChain(true)
+                        .addResolver(new PathResourceResolver() {
+                            @Override
+                            protected Resource getResource(String resourcePath, Resource location) throws IOException {
+                                Resource resource = super.getResource(resourcePath, location);
+                                if (resource == null) {
+                                    return null;
+                                }
+                                return new WrappedResource(resource) {
+                                    @Override
+                                    public String getFilename() {
+                                        return resource.getFilename();
+                                    }
+
+                                    @Override
+                                    public long lastModified() throws IOException {
+                                        return resource.lastModified();
+                                    }
+
+                                    @Override
+                                    public InputStream getInputStream() throws IOException {
+                                        return new ByteArrayInputStream(
+                                                ("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;\n" +
+                                                        new String(FileCopyUtils.copyToByteArray(resource.getInputStream())))
+                                                        .getBytes(StandardCharsets.UTF_8)
+                                        );
+                                    }
+                                };
+                            }
+                        });
             }
-        });
-    }
-});
-
-// Load data on page load
-window.addEventListener('load', async () => {
-    await loadAccounts();
-    await loadDashboard();
-});
-// Transaction tab management
-function showTransactionTab(tabName) {
-    // Hide all transaction tabs
-    document.querySelectorAll('.transaction-tab-content').forEach(tab => {
-        tab.classList.remove('active');
-    });
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.classList.remove('active');
-    });
-
-    // Show selected tab
-    document.getElementById(`${tabName}-transaction`).classList.add('active');
-    const tabButtons = document.querySelectorAll('.tab-btn');
-    const tabIndex = ['deposit', 'withdraw', 'history'].indexOf(tabName);
-    if (tabButtons[tabIndex]) {
-        tabButtons[tabIndex].classList.add('active');
-    }
-    
-    currentTransactionTab = tabName;
-}
-
-// Account filtering
-function filterAccounts() {
-    const typeFilter = document.getElementById('accountTypeFilter').value;
-    const statusFilter = document.getElementById('accountStatusFilter').value;
-    
-    let filteredAccounts = allAccounts;
-    
-    if (typeFilter) {
-        filteredAccounts = filteredAccounts.filter(acc => acc.accountType === typeFilter);
-    }
-    
-    if (statusFilter) {
-        const isActive = statusFilter === 'active';
-        filteredAccounts = filteredAccounts.filter(acc => acc.active === isActive);
-    }
-    
-    displayFilteredAccounts(filteredAccounts);
-}
-
-function displayFilteredAccounts(accounts) {
-    const accountsList = document.getElementById('accountsList');
-    if (accounts.length === 0) {
-        accountsList.innerHTML = `
-            <div class="empty-state">
-                <i class="fas fa-filter"></i>
-                <p>No accounts match the selected filters.</p>
-            </div>
-        `;
-        return;
-    }
-    
-    accountsList.innerHTML = accounts.map(account => `
-        <div class="account-card">
-            <div class="account-header">
-                <span class="account-type">${account.accountType}</span>
-                <span class="account-status ${account.active ? 'active' : 'inactive'}">
-                    ${account.active ? 'Active' : 'Inactive'}
-                </span>
-            </div>
-            <div class="account-balance">
-                <div class="account-balance-label">Available Balance</div>
-                <div class="account-balance-amount">${formatCurrency(account.balance, account.currency)}</div>
-            </div>
-            <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
-                <div style="font-size: 0.875rem; color: var(--text-secondary);">
-                    <div><strong>Customer:</strong> ${account.customerId}</div>
-                    <div style="margin-top: 0.5rem;"><strong>Account:</strong> ${formatAccountId(account.accountId)}</div>
-                </div>
-            </div>
-        </div>
-    `).join('');
-}
-
-// Transfer balance update
-function updateTransferBalance() {
-    const fromAccountId = document.getElementById('fromAccountId').value;
-    const balanceDisplay = document.getElementById('fromAccountBalance');
-    
-    if (fromAccountId) {
-        const account = allAccounts.find(acc => acc.accountId === fromAccountId);
-        if (account) {
-            balanceDisplay.textContent = `Available: ${formatCurrency(account.balance, account.currency)}`;
-        }
-    } else {
-        balanceDisplay.textContent = 'Available: $0.00';
+        };
     }
 }
 
-// Withdraw balance update
-function updateWithdrawBalance() {
-    const accountId = document.getElementById('withdrawAccountId').value;
-    const balanceDisplay = document.getElementById('withdrawBalance');
-    
-    if (accountId) {
-        const account = allAccounts.find(acc => acc.accountId === accountId);
-        if (account) {
-            balanceDisplay.textContent = `Available: ${formatCurrency(account.balance, account.currency)}`;
-        }
-    } else {
-        balanceDisplay.textContent = 'Available: $0.00';
+
+package com.banking.api;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class BankingApiApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(BankingApiApplication.class, args);
     }
 }
-
-// Transaction history filtering
-function filterTransactionHistory() {
-    // This would filter the displayed transaction history
-    // Implementation depends on having transaction data loaded
-    console.log('Filtering transaction history...');
-}
-
-// Enhanced form validation
-function validateTransferForm() {
-    const fromAccountId = document.getElementById('fromAccountId').value;
-    const toAccountId = document.getElementById('toAccountId').value;
-    const amount = parseFloat(document.getElementById('transferAmount').value);
-    
-    if (fromAccountId === toAccountId) {
-        showToast('Cannot transfer to the same account', 'error');
-        return false;
-    }
-    
-    const fromAccount = allAccounts.find(acc => acc.accountId === fromAccountId);
-    if (fromAccount && amount > fromAccount.balance) {
-        showToast('Insufficient funds for transfer', 'error');
-        return false;
-    }
-    
-    return true;
-}
-
-// Update transfer summary
-function updateTransferSummary() {
-    const fromAccountId = document.getElementById('fromAccountId').value;
-    const toAccountId = document.getElementById('toAccountId').value;
-    const amount = document.getElementById('transferAmount').value;
-    const description = document.getElementById('transferDescription').value;
-    
-    if (fromAccountId && toAccountId && amount && description) {
-        const fromAccount = allAccounts.find(acc => acc.accountId === fromAccountId);
-        const toAccount = allAccounts.find(acc => acc.accountId === toAccountId);
-        
-        if (fromAccount && toAccount) {
-            document.getElementById('summaryFromAccount').textContent = 
-                `${formatAccountId(fromAccountId)} (${fromAccount.accountType})`;
-            document.getElementById('summaryToAccount').textContent = 
-                `${formatAccountId(toAccountId)} (${toAccount.accountType})`;
-            document.getElementById('summaryAmount').textContent = 
-                formatCurrency(parseFloat(amount), fromAccount.currency);
-            document.getElementById('summaryDescription').textContent = description;
-            
-            document.getElementById('transferSummary').style.display = 'block';
-        }
-    } else {
-        document.getElementById('transferSummary').style.display = 'none';
-    }
-}
-
-// Enhanced event listeners
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize theme
-    initTheme();
-    
-    // Transfer form listeners
-    const transferInputs = ['fromAccountId', 'toAccountId', 'transferAmount', 'transferDescription'];
-    transferInputs.forEach(id => {
-        const element = document.getElementById(id);
-        if (element) {
-            element.addEventListener('input', updateTransferSummary);
-            element.addEventListener('change', updateTransferSummary);
-        }
-    });
-    
-    // Balance update listeners
-    const fromAccountSelect = document.getElementById('fromAccountId');
-    if (fromAccountSelect) {
-        fromAccountSelect.addEventListener('change', updateTransferBalance);
-    }
-    
-    const withdrawAccountSelect = document.getElementById('withdrawAccountId');
-    if (withdrawAccountSelect) {
-        withdrawAccountSelect.addEventListener('change', updateWithdrawBalance);
-    }
-});
-
-// Load data on page load
-window.addEventListener('load', async () => {
-    await loadAccounts();
-    await loadDashboard();
-});
