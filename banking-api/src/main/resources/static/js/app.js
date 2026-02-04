@@ -206,23 +206,42 @@ async function loadDashboard() {
                 </div>
             `;
         } else {
-            dashboardAccounts.innerHTML = accounts.slice(0, 4).map(account => `
-                <div class="account-card">
-                    <div class="account-header">
-                        <span class="account-type">${DOMPurify.sanitize(account.accountType)}</span>
-                        <span class="account-status ${account.active ? 'active' : 'inactive'}">
-                            ${account.active ? 'Active' : 'Inactive'}
-                        </span>
-                    </div>
-                    <div class="account-balance">
-                        <div class="account-balance-label">Available Balance</div>
-                        <div class="account-balance-amount">${formatCurrency(account.balance, account.currency)}</div>
-                    </div>
-                    <div class="account-id">
-                        <strong>Account:</strong> ${formatAccountId(account.accountId)}
-                    </div>
-                </div>
-            `).join('');
+            dashboardAccounts.innerHTML = '';
+            accounts.slice(0, 4).forEach(account => {
+                const accountCard = document.createElement('div');
+                accountCard.className = 'account-card';
+
+                const accountType = document.createElement('span');
+                accountType.className = 'account-type';
+                accountType.textContent = account.accountType;
+
+                const accountStatus = document.createElement('span');
+                accountStatus.className = `account-status ${account.active ? 'active' : 'inactive'}`;
+                accountStatus.textContent = account.active ? 'Active' : 'Inactive';
+
+                const accountBalanceLabel = document.createElement('div');
+                accountBalanceLabel.className = 'account-balance-label';
+                accountBalanceLabel.textContent = 'Available Balance';
+
+                const accountBalanceAmount = document.createElement('div');
+                accountBalanceAmount.className = 'account-balance-amount';
+                accountBalanceAmount.textContent = formatCurrency(account.balance, account.currency);
+
+                const accountId = document.createElement('div');
+                accountId.className = 'account-id';
+                const strongElement = document.createElement('strong');
+                strongElement.textContent = 'Account:';
+                accountId.appendChild(strongElement);
+                accountId.appendChild(document.createTextNode(` ${formatAccountId(account.accountId)}`));
+
+                accountCard.appendChild(accountType);
+                accountCard.appendChild(accountStatus);
+                accountCard.appendChild(accountBalanceLabel);
+                accountCard.appendChild(accountBalanceAmount);
+                accountCard.appendChild(accountId);
+
+                dashboardAccounts.appendChild(accountCard);
+            });
         }
         
         // Load recent activity (placeholder for now)
@@ -299,28 +318,59 @@ document.getElementById('customerAccountsForm').addEventListener('submit', async
             customerAccountsList.innerHTML = `
                 <div class="empty-state">
                     <i class="fas fa-search"></i>
-                    <p>No accounts found for customer ${DOMPurify.sanitize(customerId)}.</p>
+                    <p>No accounts found for customer ${customerId}.</p>
                 </div>
             `;
             return;
         }
-        customerAccountsList.innerHTML = accounts.map(account => `
-            <div class="account-card">
-                <div class="account-header">
-                    <span class="account-type">${DOMPurify.sanitize(account.accountType)}</span>
-                    <span class="account-status ${account.active ? 'active' : 'inactive'}">
-                        ${account.active ? 'Active' : 'Inactive'}
-                    </span>
-                </div>
-                <div class="account-balance">
-                    <div class="account-balance-label">Available Balance</div>
-                    <div class="account-balance-amount">${formatCurrency(account.balance, account.currency)}</div>
-                </div>
-                <div class="account-id">
-                    <strong>Account:</strong> ${formatAccountId(account.accountId)}
-                </div>
-            </div>
-        `).join('');
+        customerAccountsList.innerHTML = '';
+        accounts.forEach(account => {
+            const accountCard = document.createElement('div');
+            accountCard.className = 'account-card';
+
+            const accountHeader = document.createElement('div');
+            accountHeader.className = 'account-header';
+
+            const accountType = document.createElement('span');
+            accountType.className = 'account-type';
+            accountType.textContent = account.accountType;
+
+            const accountStatus = document.createElement('span');
+            accountStatus.className = `account-status ${account.active ? 'active' : 'inactive'}`;
+            accountStatus.textContent = account.active ? 'Active' : 'Inactive';
+
+            accountHeader.appendChild(accountType);
+            accountHeader.appendChild(accountStatus);
+
+            const accountBalance = document.createElement('div');
+            accountBalance.className = 'account-balance';
+
+            const balanceLabel = document.createElement('div');
+            balanceLabel.className = 'account-balance-label';
+            balanceLabel.textContent = 'Available Balance';
+
+            const balanceAmount = document.createElement('div');
+            balanceAmount.className = 'account-balance-amount';
+            balanceAmount.textContent = formatCurrency(account.balance, account.currency);
+
+            accountBalance.appendChild(balanceLabel);
+            accountBalance.appendChild(balanceAmount);
+
+            const accountId = document.createElement('div');
+            accountId.className = 'account-id';
+
+            const accountIdLabel = document.createElement('strong');
+            accountIdLabel.textContent = 'Account:';
+
+            accountId.appendChild(accountIdLabel);
+            accountId.appendChild(document.createTextNode(` ${formatAccountId(account.accountId)}`));
+
+            accountCard.appendChild(accountHeader);
+            accountCard.appendChild(accountBalance);
+            accountCard.appendChild(accountId);
+
+            customerAccountsList.appendChild(accountCard);
+        });
     } catch (error) {
         // Error already shown by apiCall
     }
@@ -392,49 +442,6 @@ document.getElementById('transferForm').addEventListener('submit', async (e) => 
     showConfirmModal(
         'Confirm Transfer',
         `Transfer ${formatCurrency(amount)} from ${formatAccountId(fromAccountId)} to ${formatAccountId(toAccountId)}?`,
-        async () => {
-            try {
-                showLoading();
-                const fromAccount = allAccounts.find(acc => acc.accountId === fromAccountId);
-                const currency = fromAccount ? fromAccount.currency : 'USD';
-                
-                const transaction = await apiCall('/transactions/transfer', 'POST', {
-                    fromAccountId: fromAccountId,
-                    toAccountId: toAccountId,
-                    amount: amount,
-                    currency: currency,
-                    description: description
-                });
-                
-                showToast(`Transfer successful! Amount: ${formatCurrency(transaction.amount, transaction.currency)}`, 'success');
-                document.getElementById('transferForm').reset();
-                document.getElementById('transferSummary').style.display = 'none';
-                await loadAccounts();
-                await loadDashboard();
-            } catch (error) {
-                // Error already shown by apiCall
-            } finally {
-                hideLoading();
-            }
-        }
-    );
-});
-
-document.getElementById('transactionHistoryForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    try {
-        const accountId = document.getElementById('historyAccountId').value;
-        const transactions = await apiCall(`/transactions/account/${accountId}`);
-        const transactionHistory = document.getElementById('transactionHistory');
-        if (transactions.length === 0) {
-            transactionHistory.innerHTML = `
-                <div class="empty-state">
-                    <i class="fas fa-history"></i>
-                    <p>No transactions found for this account.</p>
-                </div>
-            `;
-            return;
-        }
 
 
 package com.banking.api.config;
@@ -467,29 +474,53 @@ public class WebConfig implements WebMvcConfigurer {
                         .allowCredentials(true)
                         .maxAge(3600);
             }
-        };
-    }
 
-    @Override
-    public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        registry.addResourceHandler("/**")
-                .addResourceLocations("classpath:/static/")
-                .setCacheControl(CacheControl.noCache().mustRevalidate());
+            @Override
+            public void addResourceHandlers(ResourceHandlerRegistry registry) {
+                registry.addResourceHandler("/**")
+                        .addResourceLocations("classpath:/static/")
+                        .setCachePeriod(0)
+                        .resourceChain(true);
+            }
+        };
     }
 
     @Bean
     public WebMvcConfigurer contentSecurityPolicyConfigurer() {
         return new WebMvcConfigurer() {
             @Override
-            public void addInterceptors(InterceptorRegistry registry) {
-                registry.addInterceptor(new HandlerInterceptor() {
-                    @Override
-                    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
-                        response.setHeader("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'");
-                        return true;
-                    }
-                });
+            public void addResourceHandlers(ResourceHandlerRegistry registry) {
+                registry.addResourceHandler("/**")
+                        .addResourceLocations("classpath:/static/")
+                        .setCachePeriod(0)
+                        .resourceChain(true)
+                        .addTransformer((request, response, chain) -> {
+                            response.setHeader("Content-Security-Policy", 
+                                "default-src 'self'; " +
+                                "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
+                                "style-src 'self' 'unsafe-inline'; " +
+                                "img-src 'self' data:; " +
+                                "font-src 'self'; " +
+                                "connect-src 'self'; " +
+                                "frame-src 'none'; " +
+                                "object-src 'none'; " +
+                                "base-uri 'self'");
+                            chain.transform(request, response);
+                        });
             }
         };
+    }
+}
+
+
+package com.banking.api;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class BankingApiApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(BankingApiApplication.class, args);
     }
 }
