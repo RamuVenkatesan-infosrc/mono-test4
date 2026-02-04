@@ -76,3 +76,45 @@ public class AccountController {
         return response;
     }
 }
+
+
+package com.banking.api.config;
+
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+@Configuration
+public class WebConfig extends WebSecurityConfigurerAdapter implements WebMvcConfigurer {
+
+    private static final Logger logger = LoggerFactory.getLogger(WebConfig.class);
+
+    @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        registry.addResourceHandler("/**")
+                .addResourceLocations("classpath:/static/");
+    }
+
+    @Override
+    public void addCorsMappings(CorsRegistry registry) {
+        registry.addMapping("/**")
+                .allowedOrigins("*")
+                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                .allowedHeaders("*")
+                .exposedHeaders("Authorization")
+                .allowCredentials(true)
+                .maxAge(3600);
+        
+        logger.info("CORS configuration applied");
+    }
+
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        http
+            .csrf().disable() // Disable CSRF protection as per project constraints
+            .authorizeRequests()
+                .anyRequest().permitAll();
+    }
+}
