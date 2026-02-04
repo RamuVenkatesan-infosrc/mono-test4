@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/accounts")
+@CrossOrigin(origins = "https://trusted-origin.com") // Replace with your actual trusted origin
 public class AccountController {
 
     private final AccountService accountService;
